@@ -83,7 +83,7 @@ module axis_packet_flush #(
         .space(), .occupied()
       );
     end else begin
-      assign {m_axis_tlast, m_axis_tdata, m_axis_tvalid} = {o_pipe_tlast, o_pipe_tdata, o_pipe_tvalid};
+      assign {m_axis_tlast, m_axis_tdata, m_axis_tvalid} = {o_pipe_tlast&o_pipe_tvalid, o_pipe_tdata, o_pipe_tvalid};
       assign o_pipe_tready = m_axis_tready;
     end
   endgenerate
