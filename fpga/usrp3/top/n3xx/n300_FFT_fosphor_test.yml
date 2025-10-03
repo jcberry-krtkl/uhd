@@ -1,0 +1,107 @@
+# General parameters
+# -----------------------------------------
+schema: rfnoc_imagebuilder_args         # Identifier for the schema used to validate this file
+copyright: >-                           # Copyright information used in file headers
+  Copyright 2023 Ettus Research, a National Instruments Brand
+license: >-                             # License information used in file headers
+  SPDX-License-Identifier: LGPL-3.0-or-later
+version: '1.0'                          # File version
+chdr_width: 64                          # Bit width of the CHDR bus for this image
+device: 'n300'
+default_target: 'N300_XG_FFT_fosphor_test'
+image_core_name: 'usrp_n300_fpga_XG_FFT_fosphor_test'  # Name to use for the generated output files.
+                                                   # Change image_core_name and default_target in tandem,
+                                                   # because we won't generate the correct DTS files otherwise.
+
+# A list of all stream endpoints in design
+# ----------------------------------------
+stream_endpoints:
+  ep0:                                  # Stream endpoint name
+    ctrl: True                          # Endpoint passes control traffic
+    data: True                          # Endpoint passes data traffic
+    buff_size: 0                        # Ingress buffer size for data
+  ep1:
+    ctrl: True
+    data: True
+    buff_size: 32768
+  ep2:
+    ctrl: False
+    data: True
+    buff_size: 0
+    #  ep3:
+    #ctrl: False
+    #data: True
+    #buff_size: 0
+
+# A list of all NoC blocks in design
+# ----------------------------------
+noc_blocks:
+  radio0:                      # NoC block name
+    block_desc: 'radio.yml'    # Block device descriptor file
+    parameters:                # Block HDL parameters
+      NUM_PORTS: 2
+  ddc0:
+    block_desc: 'ddc.yml'
+    parameters:
+      NUM_PORTS: 1
+  null_src_sink0:
+    block_desc: 'null_src_sink.yml'
+  null_src_sink1:
+    block_desc: 'null_src_sink.yml'
+  fft0:
+    block_desc: 'fft.yml'
+    parameters:
+      NUM_PORTS: 1
+      NUM_CORES: 1
+      MAX_FFT_SIZE_LOG2: 10
+      EN_CP_REMOVAL: 0
+      EN_CP_INSERTION: 0
+      CP_INSERTION_REPEAT: 0
+      CP_REMOVAL_REPEAT: 0
+      EN_FFT_BYPASS: 0
+      EN_FFT_ORDER: 1
+      EN_MAGNITUDE: 0
+      EN_MAGNITUDE_SQ: 0
+      USE_APPROX_MAG: 0
+  fosphor0:
+    block_desc: 'fosphor.yml'
+
+# A list of all static connections in design
+# ------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk = Source block to connect
+#   - srcport = Port on the source block to connect
+#   - dstblk = Destination block to connect
+#   - dstport = Port on the destination block to connect
+connections:
+#  # RF 0 TX
+  - { srcblk: null_src_sink0,    srcport: source,  dstblk: radio0,  dstport: in_0 }
+  # RF 0 RX
+  - { srcblk: radio0,   srcport: out_0,  dstblk: ddc0,     dstport: in_0 }
+  - { srcblk: ddc0,     srcport: out_0,  dstblk: ep1,     dstport: in0  }
+    #- { srcblk: ddc0,     srcport: out_0,  dstblk: fft0,     dstport: in_0  }
+  - { srcblk: ep0,      srcport: out0,   dstblk: fft0,     dstport: in_0 }
+  - { srcblk: fft0,     srcport: out_0,  dstblk: fosphor0, dstport: fft_in }  
+  - { srcblk: fosphor0, srcport: hist,   dstblk: ep0,      dstport: in0 }
+  - { srcblk: fosphor0, srcport: wf,     dstblk: ep2,      dstport: in0 }
+  # RF 0 TX
+  - { srcblk: null_src_sink1,    srcport: source,  dstblk: radio0,  dstport: in_1 }
+  # RF 1 RX
+  - { srcblk: radio0, srcport: out_1,  dstblk: null_src_sink1,  dstport: sink }
+  # BSP Connections
+  - { srcblk: radio0,   srcport: ctrlport, dstblk: _device_, dstport: ctrlport_radio0 }
+  - { srcblk: _device_, srcport: radio0,   dstblk: radio0,   dstport: radio           }
+  - { srcblk: _device_, srcport: time,     dstblk: radio0,   dstport: time            }
+
+# A list of all clock domain connections in design
+# ------------------------------------------------
+# Format: A list of connection maps (list of key-value pairs) with the following keys
+#   - srcblk  = Source block to connect (Always "_device"_)
+#   - srcport = Clock domain on the source block to connect
+#   - dstblk  = Destination block to connect
+#   - dstport = Clock domain on the destination block to connect
+clk_domains:
+  - { srcblk: _device_, srcport: radio,      dstblk: radio0,   dstport: radio }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: ddc0,     dstport: ce    }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: fft0,     dstport: ce    }
+  - { srcblk: _device_, srcport: rfnoc_chdr, dstblk: fosphor0, dstport: ce    }
