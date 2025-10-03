@@ -1,7 +1,9 @@
 #!/bin/bash
 
-VIVADO_VER=2021.1
-VIVADO_VER_FULL=2021.1_AR76780
+#VIVADO_VER=2021.1
+#VIVADO_VER_FULL=2021.1_AR76780
+VIVADO_VER=2024.1
+VIVADO_VER_FULL=v2024.1
 DISPLAY_NAME="USRP-N3x0"
 REPO_BASE_PATH=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 
@@ -15,3 +17,4 @@ export ARCH=zynq
 export PART_ID="xc7z100/ffg900/-2"
 
 source $REPO_BASE_PATH/tools/scripts/setupenv_base.sh
+source /tools/Xilinx/Vivado/2024.1/settings64.sh
